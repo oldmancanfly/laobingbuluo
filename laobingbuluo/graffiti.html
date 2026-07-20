@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>涂鸦 · 老兵部落</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+</head>
+<body>
+<div class="page-wrap">
+  <nav class="header-nav">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 36 36" fill="none"><path d="M18 3L3 15h4v14h8V19h6v10h8V15h4L18 3z" fill="#f5efe0" opacity="0.9"/></svg>
+      老兵部落
+    </a>
+    <button class="hamburger" aria-label="菜单"><span></span><span></span><span></span></button>
+    <ul class="nav-links">
+      <li><a href="index.html">首页</a></li>
+      <li><a href="about.html">关于</a></li>
+      <li><a href="gallery.html">相册</a></li>
+      <li><a href="graffiti.html" class="active">涂鸦</a></li>
+      <li><a href="guestbook.html">留言</a></li>
+      <li><a href="contact.html">联系</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section class="section">
+      <h2 class="section-title">涂鸦墙</h2>
+      <div class="section-divider-wrap">
+        <span class="line"></span><span class="diamond"></span><span class="line"></span>
+      </div>
+      <p class="section-subtitle">随便画点什么，画完可以存到电脑上</p>
+
+      <div class="graffiti-container">
+        <canvas id="graffitiCanvas"></canvas>
+
+        <div class="graffiti-tools">
+          <input type="color" id="penColor" value="#2c1810">
+          <label style="font-size:0.85rem;color:var(--text-light);">粗细</label>
+          <input type="range" id="penWidth" min="1" max="20" value="4">
+          <button class="tool-btn" id="clearCanvas">清空</button>
+          <button class="tool-btn" id="undoCanvas">撤销</button>
+          <button class="tool-btn" id="saveCanvas">保存图片</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-logo">老兵部落 · 小院</p>
+    <p>一个老兵的家 | <a href="contact.html">联系我们</a></p>
+    <p style="margin-top:0.5rem; font-size:0.8rem; opacity:0.5;">© 2026 老兵部落</p>
+  </footer>
+</div>
+<script src="js/graffiti.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
