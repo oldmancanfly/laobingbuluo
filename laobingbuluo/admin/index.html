@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 · 老兵部落</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Microsoft YaHei", sans-serif; background: #f5efe0; color: #2c1810; }
+.header { background: #1a3a16; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 1.2rem; }
+.container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+.login-box { background: #fff; border-radius: 12px; padding: 2rem; max-width: 400px; margin: 4rem auto; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+.login-box input { width: 100%; padding: 0.8rem; border: 2px solid #ddd; border-radius: 8px; margin: 1rem 0; font-size: 1rem; }
+.login-box button { width: 100%; padding: 0.8rem; background: #2d6b28; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+.login-box button:hover { background: #1a3a16; }
+.hidden { display: none; }
+.msg-list { margin-top: 1.5rem; }
+.msg-item { background: #fff; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+.msg-item .info { flex: 1; }
+.msg-item .name { font-weight: bold; color: #1a3a16; }
+.msg-item .date { color: #999; font-size: 0.8rem; margin-left: 0.5rem; }
+.msg-item .text { margin-top: 0.3rem; color: #555; font-size: 0.9rem; }
+.msg-item .del-btn { background: none; border: none; color: #c00; cursor: pointer; font-size: 1.2rem; padding: 0.2rem; }
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.tab-btn { padding: 0.5rem 1.2rem; border: 2px solid #2d6b28; background: #fff; color: #2d6b28; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
+.tab-btn.active { background: #2d6b28; color: #fff; }
+.status { background: #e8f5e9; color: #2d6b28; padding: 0.5rem; border-radius: 6px; margin: 0.5rem 0; text-align: center; font-size: 0.9rem; }
+
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: #fff; border-radius: 10px; padding: 1.2rem; text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+.stat-card .num { font-size: 2rem; font-weight: bold; color: #1a3a16; }
+.stat-card .label { font-size: 0.85rem; color: #888; margin-top: 0.3rem; }
+.chart-section { background: #fff; border-radius: 10px; padding: 1.2rem; margin-bottom: 1rem; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+.chart-section h3 { font-size: 0.95rem; color: #1a3a16; margin-bottom: 0.8rem; }
+.chart-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; font-size: 0.85rem; }
+.chart-bar { height: 20px; background: linear-gradient(90deg, #2d6b28, #4a9a42); border-radius: 4px; color: #fff; line-height: 20px; padding: 0 6px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; min-width: 20px; text-align: right; }
+.chart-label { width: 80px; flex-shrink: 0; color: #555; }
+.chart-num { width: 40px; text-align: right; color: #888; flex-shrink: 0; }
+.day-chart { display: flex; gap: 4px; align-items: flex-end; height: 100px; }
+.day-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.day-bar { width: 100%; max-width: 40px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #2d6b28, #4a9a42); min-height: 2px; transition: height 0.3s; }
+.day-label { font-size: 0.7rem; color: #888; margin-top: 4px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🏡 老兵部落 · 管理后台</h1>
+  <span id="loginStatus" style="font-size:0.85rem;color:rgba(255,255,255,0.6);"></span>
+</div>
+
+<div class="container">
+  <div id="loginBox" class="login-box">
+    <h2>🔑 管理员登录</h2>
+    <input type="password" id="adminKey" placeholder="输入管理密码" onkeydown="if(event.key==='Enter') login()">
+    <button onclick="login()">登录</button>
+    <p id="loginError" style="color:red;margin-top:0.5rem;display:none;"></p>
+  </div>
+
+  <div id="adminPanel" class="hidden">
+    <div class="tabs">
+      <button class="tab-btn" onclick="switchTab('stats')">📊 统计</button>
+      <button class="tab-btn active" onclick="switchTab('messages')">💬 留言</button>
+      <button class="tab-btn" onclick="switchTab('mails')">✉️ 私信</button>
+    </div>
+    <div id="statusMsg" class="status"></div>
+    <div id="panelStats" class="hidden"></div>
+    <div id="panelMessages" class="msg-list"></div>
+    <div id="panelMails" class="msg-list hidden"></div>
+  </div>
+</div>
+
+<script>
+let adminKey = '';
+
+function login() {
+  adminKey = document.getElementById('adminKey').value.trim();
+  if (!adminKey) return;
+  fetch('/api/message?action=admin-messages', {
+    headers: { 'X-Admin-Key': adminKey }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('adminPanel').classList.remove('hidden');
+      document.getElementById('loginStatus').textContent = '已登录';
+      loadStats();
+      loadMessages();
+    } else {
+      document.getElementById('loginError').textContent = '密码错误';
+      document.getElementById('loginError').style.display = 'block';
+    }
+  })
+  .catch(() => {
+    document.getElementById('loginError').textContent = '网络错误';
+    document.getElementById('loginError').style.display = 'block';
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panelStats').classList.toggle('hidden', tab !== 'stats');
+  document.getElementById('panelMessages').classList.toggle('hidden', tab !== 'messages');
+  document.getElementById('panelMails').classList.toggle('hidden', tab !== 'mails');
+  if (tab === 'stats') loadStats();
+  if (tab === 'messages') loadMessages();
+  if (tab === 'mails') loadMails();
+}
+
+// ===== 统计面板 =====
+function loadStats() {
+  setStatus('加载统计中...');
+  fetch('/api/message?action=admin-stats', {
+    headers: { 'X-Admin-Key': adminKey }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) { setStatus('加载失败'); return; }
+    setStatus('');
+    const s = d.stats;
+    const panel = document.getElementById('panelStats');
+    const maxDay = Math.max(...s.dayStats.map(d => d.pv), 1);
+    const maxCountry = Math.max(...s.topCountries.map(c => c.count), 1);
+    const maxBrowser = Math.max(...s.topBrowsers.map(c => c.count), 1);
+
+    panel.innerHTML = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="num">${s.todayPv}</div><div class="label">今日访问(PV)</div></div>
+        <div class="stat-card"><div class="num">${s.todayUv}</div><div class="label">今日访客(UV)</div></div>
+        <div class="stat-card"><div class="num">${s.totalPv}</div><div class="label">总访问(PV)</div></div>
+        <div class="stat-card"><div class="num">${s.totalUv}</div><div class="label">总访客(UV)</div></div>
+      </div>
+
+      <div class="chart-section">
+        <h3>📈 近 7 天访问趋势</h3>
+        <div class="day-chart">
+          ${s.dayStats.map(d => `
+            <div class="day-bar-wrap">
+              <div class="day-bar" style="height:${Math.max(2, d.pv / maxDay * 100)}px;" title="PV:${d.pv} UV:${d.uv}"></div>
+              <div class="day-label">${d.date.slice(5)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="chart-section">
+          <h3>🌍 地区分布</h3>
+          ${s.topCountries.map(c => `
+            <div class="chart-row">
+              <span class="chart-label">${c.code || '未知'}</span>
+              <div class="chart-bar" style="width:${Math.max(20, c.count / maxCountry * 200)}px;">${c.count}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="chart-section">
+          <h3>💻 浏览器</h3>
+          ${s.topBrowsers.map(b => `
+            <div class="chart-row">
+              <span class="chart-label">${b.name}</span>
+              <div class="chart-bar" style="width:${Math.max(20, b.count / maxBrowser * 200)}px;">${b.count}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h3>📄 热门页面</h3>
+        ${s.topPages.map(p => `
+          <div class="chart-row">
+            <span class="chart-label">${p.path}</span>
+            <span class="chart-num">${p.count}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  })
+  .catch(() => setStatus('加载失败'));
+}
+
+// ===== 留言列表 =====
+function loadMessages() {
+  setStatus('加载中...');
+  fetch('/api/message?action=admin-messages', {
+    headers: { 'X-Admin-Key': adminKey }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) { setStatus('加载失败'); return; }
+    const panel = document.getElementById('panelMessages');
+    const msgs = d.data || [];
+    if (msgs.length === 0) {
+      panel.innerHTML = '<p style="text-align:center;color:#999;padding:2rem;">暂无留言</p>';
+      setStatus('共 0 条留言');
+      return;
+    }
+    panel.innerHTML = [...msgs].reverse().map(m => `
+      <div class="msg-item">
+        <div class="info">
+          <span class="name">${esc(m.name)}</span>
+          <span class="date">${m.date ? new Date(m.date).toLocaleString() : ''}</span>
+          <p class="text">${esc(m.message)}</p>
+          <p style="margin-top:0.2rem;font-size:0.78rem;color:#aaa;">IP: ${esc(m.ip || '?')} · ${esc((m.ua || '?').slice(0, 60))}</p>
+        </div>
+        <button class="del-btn" onclick="deleteMessage('${m.id}')">&times;</button>
+      </div>
+    `).join('');
+    setStatus('共 ' + msgs.length + ' 条留言');
+  })
+  .catch(() => setStatus('加载失败'));
+}
+
+// ===== 私信列表 =====
+function loadMails() {
+  setStatus('加载中...');
+  fetch('/api/message?action=admin-mails', {
+    headers: { 'X-Admin-Key': adminKey }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.success) { setStatus('加载失败'); return; }
+    const panel = document.getElementById('panelMails');
+    const mails = d.data || [];
+    if (mails.length === 0) {
+      panel.innerHTML = '<p style="text-align:center;color:#999;padding:2rem;">暂无私信</p>';
+      setStatus('共 0 条私信');
+      return;
+    }
+    panel.innerHTML = [...mails].reverse().map(m => `
+      <div class="msg-item">
+        <div class="info">
+          <span class="name">${esc(m.name)}</span>
+          <span class="date">${m.date ? new Date(m.date).toLocaleString() : ''}</span>
+          <p class="text">${esc(m.message)}</p>
+          ${m.contact ? '<p style="margin-top:0.3rem;font-size:0.85rem;color:#888;">📞 ' + esc(m.contact) + '</p>' : ''}
+          <p style="margin-top:0.2rem;font-size:0.78rem;color:#aaa;">IP: ${esc(m.ip || '?')} · ${esc((m.ua || '?').slice(0, 60))}</p>
+        </div>
+        <button class="del-btn" onclick="deleteMail('${m.id}')">&times;</button>
+      </div>
+    `).join('');
+    setStatus('共 ' + mails.length + ' 条私信');
+  })
+  .catch(() => setStatus('加载失败'));
+}
+
+function loadInterests() {
+  setStatus('暂无数据');
+  document.getElementById('panelInterests').innerHTML = '<p style="text-align:center;color:#999;padding:2rem;">暂无数据</p>';
+}
+
+function deleteMessage(id) {
+  if (!confirm('确定删除这条留言？')) return;
+  fetch('/api/message?action=admin-delete&id=' + id, {
+    headers: { 'X-Admin-Key': adminKey }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) loadMessages();
+    else alert('删除失败');
+  });
+}
+
+function deleteMail(id) {
+  if (!confirm('确定删除这条私信？')) return;
+  fetch('/api/message?action=admin-delete-mail&id=' + id, {
+    headers: { 'X-Admin-Key': adminKey }
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) loadMails();
+    else alert('删除失败');
+  });
+}
+
+function setStatus(msg) {
+  document.getElementById('statusMsg').textContent = msg;
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
